@@ -28,18 +28,26 @@ SHEETS = {
     9: [("okoru", w) for w in "かっとなる ぶすっと ぷんぷん ムカッ 頭にくる 堪忍袋の緒が切れる 腹にすえかねる 虫の居所が悪い 目くじらを立てる".split()],
     10: [("kanashii", w) for w in "さびしい がっかり くやしい 泣きたくなる 悲しみにくれる 雨雲がかかったよう 心にぽっかり穴があいたよう しおれた花のよう 火が消えたよう うつむく 肩を落とす くちびるをかむ なみだをこらえる 胸がしめつけられる 目がうるむ がっくり".split()],
     11: [("kanashii", w) for w in "しくしく しょんぼり どんより ぽろぽろ めそめそ 後ろ髪を引かれる 気を落とす 心が晴れない 胸がつぶれる".split()],
-    12: [("dokidoki", w) for w in "そわそわ 不安になる ハラハラ きんちょうでかたくなる 生きた心地がしない 足がぼうのよう 穴があったら入りたい 心ぞうが口から飛び出しそう ゆでだこのよう ロボットのよう 足がすくむ 顔が赤くなる 声がふるえる 手に汗をにぎる 冷やあせをかく 目が泳ぐ".split()],
+    12: [("dokidoki", w) for w in "そわそわ 不安になる ハラハラ きんちょうでかたくなる 生きた心地がしない 足が震える 穴があったら入りたい 心ぞうが口から飛び出しそう ゆでだこのよう ロボットのよう 足がすくむ 顔が赤くなる 声がふるえる 手に汗をにぎる 冷やあせをかく 目が泳ぐ".split()],
     13: [("dokidoki", w) for w in "おどおど がちがち ドキッ どぎまぎ ひやひや びくびく もじもじ あがる 顔から火が出る 気が気でない 胸がキュンとする 胸がときめく".split()],
     14: [("hotto", w) for w in "気が楽になる ひと安心 安心する 心からほっとする 全身の力がぬける あたたかいお風呂に入ったよう 重い荷物をおろしたよう 雲が晴れたよう ひだまりのよう 顔がゆるむ 肩の力がぬける その場にへたりこむ ため息をつく 胸をなでおろす すっきり ほっと一息".split()],
     15: [("hotto", w) for w in "ほのぼの やれやれ 生きた心地がする 肩の荷が下りる 気がゆるむ 心が晴れる 胸のつかえがとれる".split()],
     16: [("bikkuri", w) for w in "おやっと思う はっとする おどろく びっくりぎょうてん 腰をぬかす 雷に打たれたよう 時が止まったよう 鳩が豆鉄砲を食ったよう 目が点になる 息をのむ 口をあんぐりあける 声を上げる 背すじがこおる 目を丸くする きょとん ぎょっとする".split()],
     17: [("bikkuri", w) for w in "ぞっとする ぽかんとする わあっ 開いた口がふさがらない きもを冷やす 度肝をぬかれる 寝耳に水 目を見はる".split()],
 }
+# 目・口ではなく「腕と頭のすきま」などの穴（白くぬらない）。シート番号: [(y, x), ...]（シート上の位置）
+GAP_POINTS = {
+    4: [(195, 802)], 6: [(231, 418), (152, 1492), (161, 1025)],
+    8: [(202, 1732), (206, 892), (185, 1138), (660, 1508)], 9: [(215, 1031)],
+    10: [(189, 801), (243, 1569)], 15: [(201, 396)], 16: [(194, 788)], 17: [(339, 1538)],
+}
+# 小さな穴（目のハイライトなど）も白くしない言葉（腕のあいだに細いすきまがある）
+NO_TINY_FILL = {"楽しくてしかたない"}
 BODY_MIN = 12000   # 体とみなす大きさ（画素数）
 W, H = 300, 380    # 出力キャンバス
 
 
-def cut_sheet(path, names):
+def cut_sheet(path, names, num):
     im = Image.open(path).convert("RGBA")
     A = np.array(im)
     a = A[..., 3] > 24
@@ -98,7 +106,7 @@ def cut_sheet(path, names):
         if best and bd < 170:
             owner.setdefault(best["id"], []).append(c)
     results = []
-    for b, (feeling, word) in zip(ordered, names):
+    for b, (feeling, word) in zip(ordered, names):  # noqa
         parts = owner.get(b["id"], [])
         keep = [b] + [c for c in parts if c["y0"] <= b["y1"] + 30 and c["y1"] >= b["y0"] - 170 and not (c["area"] < 120 and c["y1"] < b["y0"] - 60)]
         ids = [c["id"] for c in keep]
@@ -119,12 +127,30 @@ def cut_sheet(path, names):
         for k, s in enumerate(ndimage.find_objects(hl), 1):
             cy = (s[0].start + s[0].stop) / 2
             area = (hl[s] == k).sum()
+            gy, gx = y0 + cy, x0 + (s[1].start + s[1].stop) / 2
+            if any(abs(gy - py) < 25 and abs(gx - px) < 25 for py, px in GAP_POINTS.get(num, [])):
+                continue
+            if area < 60 and word in NO_TINY_FILL:
+                continue
             if cy < by0 + bh * 0.5 and area < 6000:
                 hm = ndimage.binary_dilation(hl == k, iterations=1)
                 al = sub[..., 3][hm].astype(float) / 255
                 for ch in range(3):
                     sub[..., ch][hm] = (sub[..., ch][hm] * al + 255 * (1 - al)).astype(np.uint8)
                 sub[..., 3][hm] = 255
+        # 体の下半分（足のあいだ など）に残っている白いかけらは、すける
+        wht = (sub[..., 0] > 200) & (sub[..., 1] > 200) & (sub[..., 2] > 200) & (sub[..., 3] > 150)
+        wl, wn = ndimage.label(wht)
+        for k, ws in enumerate(ndimage.find_objects(wl), 1):
+            if (ws[0].start + ws[0].stop) / 2 > by0 + bh * 0.55:
+                r = wl == k
+                ring = ndimage.binary_dilation(r, iterations=2) & ~r
+                solid = (sub[..., 3] > 24) & ~wht
+                other = solid & ~body
+                # 体の線にだけくっついている白（足のあいだのかけら）だけを消す。汗やひかりなど別の部品の中の白は残す
+                if (ring & body).any() and not (ring & other).any():
+                    wm = ndimage.binary_dilation(r, iterations=1) & (sub[..., 0] > 160) & (sub[..., 1] > 160) & (sub[..., 2] > 160)
+                    sub[..., 3][wm] = 0
         results.append((feeling, word, Image.fromarray(sub), b["y1"] - y0))
     return results
 
@@ -136,7 +162,7 @@ def main():
     idx = {(w["feeling"], w["word"]): w["id"] for w in words}
     allres = []
     for num, names in SHEETS.items():
-        allres += cut_sheet(src / f"{num}.png", names)
+        allres += cut_sheet(src / f"{num}.png", names, num)
     scale = 1.0
     maxw = max(r[2].width for r in allres); maxh = max(r[2].height for r in allres)
     scale = min(1.0, (W - 8) / maxw, (H - 8) / maxh)

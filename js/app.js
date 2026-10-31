@@ -25,6 +25,11 @@
     { id: 'kanyo', label: 'かんようく', sub: 'むかしからの言い方' }
   ];
   const GM = {}; GEN.forEach((g, i) => { g.i = i; GM[g.id] = g; });
+  const OTO_SUB = {
+    ureshii: 'ウキウキ・にこにこ', tanoshii: 'わくわく・ワイワイ', okoru: 'ぷんぷん・イライラ',
+    kanashii: 'しょんぼり・しくしく', dokidoki: 'そわそわ・びくびく', hotto: 'ほっと・すっきり', bikkuri: 'ぎょっ・きょとん',
+    shinpai: 'びくびく・ひやひや', kinchou: 'そわそわ・がちがち', hazukashii: 'もじもじ'
+  };
   const DOKI = [
     { id: 'shinpai', label: 'しんぱい', sub: 'どうしよう…', img: 'img/chara/stand_dokidoki.webp' },
     { id: 'kinchou', label: 'きんちょう', sub: '体がかたくなる', img: 'img/chara/sit_dokidoki.webp' },
@@ -52,8 +57,35 @@
   };
   let settings = LS.get('settings', null);
   let firstRun = !settings;
-  if (!settings) settings = { star: 3, paging: 'scroll', favBtn: true };
+  if (!settings) settings = { star: 3, paging: 'scroll', sound: true };
+  if (settings.sound === undefined) settings.sound = true;
   let favs = LS.get('favs', []).filter(id => WM[id]);
+
+  // ---------- 音（BGM：Connect／効果音：効果音ラボ） ----------
+  const SE_FILE = { cursor: 'se_cursor', decide: 'se_decide', correct: 'se_correct', wrong: 'se_wrong', fav: 'se_fav', finish: 'se_finish' };
+  const seCache = {};
+  let bgm = null;
+  function se(name) {
+    if (!settings.sound || !name) return;
+    try {
+      const base = seCache[name] || (seCache[name] = new Audio(`audio/${SE_FILE[name]}.mp3`));
+      const a = base.cloneNode();
+      a.volume = name === 'cursor' ? 0.45 : 0.7;
+      a.play().catch(() => {});
+    } catch (e) { /* 音が出せなくても動く */ }
+  }
+  function startBgm() {
+    if (!settings.sound) return;
+    try {
+      if (!bgm) { bgm = new Audio('audio/bgm_connect.mp3'); bgm.loop = true; bgm.volume = 0.32; }
+      if (bgm.paused) bgm.play().catch(() => {});
+    } catch (e) { /* 音が出せなくても動く */ }
+  }
+  function stopBgm() { if (bgm) bgm.pause(); }
+  // ブラウザは、さわるまで音を出せないので、最初にさわったときにBGMを始める
+  const unlock = () => { startBgm(); };
+  document.addEventListener('pointerdown', unlock);
+  document.addEventListener('keydown', unlock);
 
   // ---------- 状態 ----------
   let cur = { scr: 'title' };
@@ -221,7 +253,7 @@
     }
     if (!s.g) {
       h += '<div class="main">' + askHtml('どうやって さがす？', `「${s.t && s.t !== 'all' ? DM[s.t].label : f.label}」の 言いかたを さがそう`) + '<div class="grid3">';
-      h += GEN.map((g, i) => simpleCard(g.label, g.sub, `data-gen="${g.id}"`, i, bar(f.h, (i - 2) * 8), f.field)).join('');
+      h += GEN.map((g, i) => simpleCard(g.label, g.id === 'oto' ? OTO_SUB[s.t && s.t !== 'all' ? s.t : s.f] : g.sub, `data-gen="${g.id}"`, i, bar(f.h, (i - 2) * 8), f.field)).join('');
       return h + '</div></div>';
     }
     if (!s.id) {
@@ -275,7 +307,7 @@
       <div class="wtop"><span class="wread">${w.showReading ? esc(w.reading) : ''}</span><h2 class="wword" style="font-size:${cfs(w.word)}px">${esc(w.word)}</h2></div>
       <div class="wrow" style="animation-delay:.06s">
         <button class="star" aria-label="${STAR_TIP[w.star]}">${stars(w.star)}<span class="tip">${STAR_TIP[w.star]}</span></button>
-        ${settings.favBtn ? `<button class="fav${isFav(w.id) ? ' on' : ''}" data-favtoggle="${w.id}" aria-label="おきにいり" aria-pressed="${isFav(w.id)}">${SVG.heart(isFav(w.id) ? '#FF5C7A' : 'none')}</button>` : ''}
+        ${true ? `<button class="fav${isFav(w.id) ? ' on' : ''}" data-favtoggle="${w.id}" aria-label="おきにいり" aria-pressed="${isFav(w.id)}">${SVG.heart(isFav(w.id) ? '#FF5C7A' : 'none')}</button>` : ''}
         ${showDots ? `<span class="wdots">つよさ${[1, 2, 3, 4, 5].map(k => `<span class="dot${k <= w.strength ? ' on' : ''}"></span>`).join('')}</span>` : ''}
       </div>
       <p class="wmean" style="animation-delay:.12s">${ruby(w.meaning)}</p>
@@ -363,7 +395,7 @@
     if (answered) {
       const right = q.ans === e.id;
       h += `<div class="qfb"><img src="${imgOf(e)}" alt=""><div class="qtx"><span class="qres">${right ? 'せいかい！' : `ざんねん！ こたえは「${esc(e.word)}」`}</span><span class="qmean">${ruby(e.meaning)}</span></div>
-        ${settings.favBtn ? `<button class="fav${isFav(e.id) ? ' on' : ''}" data-favtoggle="${e.id}" aria-label="おきにいり" aria-pressed="${isFav(e.id)}">${SVG.heart(isFav(e.id) ? '#FF5C7A' : 'none')}</button>` : ''}
+        ${true ? `<button class="fav${isFav(e.id) ? ' on' : ''}" data-favtoggle="${e.id}" aria-label="おきにいり" aria-pressed="${isFav(e.id)}">${SVG.heart(isFav(e.id) ? '#FF5C7A' : 'none')}</button>` : ''}
         <button class="nextb" data-act="qnext">${quiz.i + 1 < quiz.n ? 'つぎへ' : 'けっかを 見る'}</button></div>`;
     }
     return h + '</div>';
@@ -381,7 +413,13 @@
       return `<div class="ov"><section class="panel" aria-label="せってい"><div class="phd"><h2>せってい</h2><button class="ic" data-act="closeov" aria-label="とじる">${SVG.close}</button></div>
         <div class="srow"><span class="slab">むずかしい ことばも 見る？</span>${seg([[1, '★ 1・2年生'], [2, '★★ 3・4年生'], [3, '★★★ 5・6年生']], settings.star, 'star')}</div>
         <div class="srow"><span class="slab">ページおくりの しくみ</span>${seg([['scroll', 'スクロール'], ['page', 'ページおくり']], settings.paging, 'paging')}</div>
-        <div class="srow"><span class="slab">おきにいりボタン</span>${seg([[true, 'ひょうじする'], [false, 'かくす']], settings.favBtn, 'favBtn')}</div></section></div>`;
+        <div class="srow"><span class="slab">おと</span>${seg([[true, 'オン'], [false, 'オフ']], settings.sound, 'sound')}</div>
+        <div><button class="sb" data-act="credit">クレジット</button></div></section></div>`;
+    }
+    if (overlay === 'credit') {
+      return `<div class="ov"><section class="panel" aria-label="クレジット"><div class="phd"><h2>クレジット</h2><button class="ic" data-act="closeov" aria-label="とじる">${SVG.close}</button></div>
+        <dl class="credit-list"><dt>きかく・せいさく</dt><dd>K.nom</dd><dt>おんがく</dt><dd>Zippy</dd><dt>こうかおん</dt><dd>効果音ラボ</dd></dl>
+        <div><button class="sb" data-act="set">もどる</button></div></section></div>`;
     }
     return '';
   }
@@ -460,8 +498,13 @@
   }
   stage.addEventListener('click', e => {
     const t = e.target.closest('button');
-    if (!t) return;
+    if (!t || t.disabled) return;
     const d = t.dataset;
+    // 効果音：お気に入りに入れたとき・クイズの答え・クイズのおわりは、それぞれの音
+    if (d.favtoggle) se(isFav(d.favtoggle) ? 'decide' : 'fav');
+    else if (d.qa) { if (quiz && quiz.qs[quiz.i].ans === null) se(d.qa === quiz.qs[quiz.i].e.id ? 'correct' : 'wrong'); }
+    else if (d.act === 'qnext' && quiz && quiz.i + 1 >= quiz.n) se('finish');
+    else if (d.set !== 'sound') se('decide');
     if (d.act) {
       switch (d.act) {
         case 'back': return back();
@@ -473,6 +516,7 @@
         case 'favs': return go({ scr: 'fav' });
         case 'quiz': quiz = null; return go({ scr: 'quiz' });
         case 'set': overlay = 'set'; return render();
+        case 'credit': overlay = 'credit'; return render();
         case 'closeov': overlay = null; return render();
         case 'pgprev': return setPage((cur.pg || 0) - 1);
         case 'pgnext': return setPage((cur.pg || 0) + 1);
@@ -504,20 +548,32 @@
     }
     if (d.first) { settings.star = +d.first; saveSettings(); firstRun = false; overlay = null; return render(); }
     if (d.set) {
-      const v = d.set === 'star' ? +d.val : d.set === 'favBtn' ? d.val === 'true' : d.val;
+      const v = d.set === 'star' ? +d.val : d.set === 'sound' ? d.val === 'true' : d.val;
       settings[d.set] = v; saveSettings();
+      if (d.set === 'sound') { if (v) { startBgm(); se('decide'); } else stopBgm(); }
       cur = Object.assign({}, cur, { pg: 0 });
       return render();
     }
   });
   // ほかの所をおしたら、せっていをとじる
   stage.addEventListener('pointerdown', e => {
-    if (overlay === 'set' && e.target.classList.contains('ov')) { overlay = null; render(); }
+    if ((overlay === 'set' || overlay === 'credit') && e.target.classList.contains('ov')) { overlay = null; render(); }
+  });
+  // ボタンにカーソルを乗せたときの音
+  let hoverBtn = null;
+  stage.addEventListener('pointerover', e => {
+    const b = e.target.closest && e.target.closest('button');
+    if (b === hoverBtn) return;
+    hoverBtn = b;
+    if (b && !b.disabled && e.pointerType === 'mouse') se('cursor');
   });
   // 「どんなきもち？」で、カードに乗せると左下の同じキャラが跳ねる
+  let hoverFeel = null;
   stage.addEventListener('pointerover', e => {
-    const fc = e.target.closest && e.target.closest('[data-feel]');
-    if (!fc || (e.relatedTarget && fc.contains(e.relatedTarget))) return;
+    const fc = e.target.closest ? e.target.closest('[data-feel]') : null;
+    if (fc === hoverFeel) return;
+    hoverFeel = fc;
+    if (!fc) return;
     const m = stage.querySelector(`[data-mini="${fc.dataset.feel}"]`);
     if (!m) return;
     m.classList.remove('jump'); void m.offsetWidth; m.classList.add('jump');

@@ -78,6 +78,15 @@ const CHECK = () => {
     await click('[data-first="3"]');
     await snap('タイトル');
     await click('[data-act="goK"]');
+    const jumped = [];
+    await page.mouse.move(5, 700);
+    for (const f of ['ureshii', 'tanoshii', 'okoru', 'kanashii', 'dokidoki', 'hotto', 'bikkuri']) {
+      await page.hover(`[data-feel="${f}"]`);
+      await page.waitForTimeout(80);
+      if (await page.evaluate((f) => document.querySelector(`[data-mini="${f}"]`).classList.contains('jump'), f)) jumped.push(f);
+      await page.mouse.move(5, 700);
+    }
+    report.push({ vp: vp.width, label: 'キャラが跳ねる', probs: jumped.length === 7 ? [] : ['跳ねないキャラがある: ' + ['ureshii', 'tanoshii', 'okoru', 'kanashii', 'dokidoki', 'hotto', 'bikkuri'].filter(f => !jumped.includes(f)).join(',')] });
     await page.hover('[data-feel="ureshii"]');
     await snap('きもち');
     await click('[data-feel="dokidoki"]');
@@ -117,6 +126,9 @@ const CHECK = () => {
     await snap('リスト');
     await click('[data-act="set"]');
     await snap('せってい');
+    await click('[data-act="credit"]');
+    await snap('クレジット');
+    await click('.panel [data-act="set"]');
     await click('[data-set="paging"][data-val="page"]');
     await click('[data-act="closeov"]');
     await snap('リスト_ページおくり');
