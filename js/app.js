@@ -187,7 +187,7 @@
     const f = FM[w.feeling];
     const dots = opt.dots ? `<span class="dots" aria-label="つよさ ${w.strength}">${[1, 2, 3, 4, 5].map(k => `<span class="dot${k <= w.strength ? ' on' : ''}"></span>`).join('')}</span>` : '';
     const face = opt.face ? `<img class="cface" src="${faceOf(w.feeling)}" alt="">` : '';
-    return `<button class="cd" data-word="${w.id}" style="--d:${d}s;animation-delay:${d}s;--bar:${bar(f.h, opt.off ? (i % 6 - 2.5) * 9 : 0)};--arr:${f.field}"><span class="cbar" aria-hidden="true"></span><span class="lbl" style="font-size:${nfs(w.word)}px"><span>${esc(w.word)}</span></span><span class="rule" aria-hidden="true"></span><span class="rd" style="font-size:${w.reading.length > 10 ? 12 : 14}px">${w.showReading ? esc(w.reading) : ''}</span>${dots}${face}${ARR}</button>`;
+    return `<button class="cd${opt.face ? ' hasface' : ''}" data-word="${w.id}" style="--d:${d}s;animation-delay:${d}s;--bar:${bar(f.h, opt.off ? (i % 6 - 2.5) * 9 : 0)};--arr:${f.field}"><span class="cbar" aria-hidden="true"></span><span class="lbl" style="font-size:${nfs(w.word)}px"><span>${esc(w.word)}</span></span><span class="rule" aria-hidden="true"></span><span class="rd" style="font-size:${w.reading.length > 10 ? 12 : 14}px">${w.showReading ? esc(w.reading) : ''}</span>${dots}${face}${ARR}</button>`;
   }
   function simpleCard(label, sub, attrs, i, barC, arrC) {
     const d = (i * 0.05).toFixed(2);

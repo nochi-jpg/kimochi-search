@@ -39,7 +39,7 @@ const CHECK = () => {
     });
   });
   // 重なり
-  const parts = [...stage.querySelectorAll('.cd,.fc,.pill,.qc,.sb,.pb,.ic,.chip,.trk,.hb,.wimg,.mini,.nav,.pips,.qsent,.qfb,.bb,.wtop,.wmean,.lk,.ask h2,.ask .sub,.qbig,.lineup,.credit,.pager')].filter(vis);
+  const parts = [...stage.querySelectorAll('.cface,.rd,.lbl > span,.cd .arr,.dots,.cd,.fc,.pill,.qc,.sb,.pb,.ic,.chip,.trk,.hb,.wimg,.mini,.nav,.pips,.qsent,.qfb,.bb,.wtop,.wmean,.lk,.ask h2,.ask .sub,.qbig,.lineup,.credit,.pager')].filter(vis);
   const shrink = (r, d) => ({ left: r.left + d, top: r.top + d, right: r.right - d, bottom: r.bottom - d });
   for (let i = 0; i < parts.length; i++) for (let j = i + 1; j < parts.length; j++) {
     const a = parts[i], b = parts[j];

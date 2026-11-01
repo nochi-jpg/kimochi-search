@@ -94,8 +94,9 @@ rt{font-size:.5em;font-weight:700;letter-spacing:0;line-height:1}
 .rd{height:30px;font-size:14px;font-weight:700;line-height:1.1;color:#3A3A3A;max-width:148px;word-break:break-all}
 .cd .arr{position:absolute;right:14px;bottom:14px}
 .cd:hover .arr{transform:translateX(4px) rotate(-12deg)}
-.dots{position:absolute;left:22px;bottom:20px;display:flex;gap:5px}
-.cface{position:absolute;left:14px;bottom:8px;width:44px;height:48px;object-fit:contain}
+.dots{position:absolute;left:22px;bottom:14px;display:flex;gap:5px}
+.cface{position:absolute;right:10px;top:12px;width:44px;height:48px;object-fit:contain;object-position:center top}
+.cd.hasface .lbl{padding-right:46px}
 .dot{width:12px;height:12px;border-radius:50%;border:2px solid #1A1A1A}
 .dot.on{background:#1A1A1A}
 .fimg{height:120px;width:160px;object-fit:contain;object-position:center bottom;transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
