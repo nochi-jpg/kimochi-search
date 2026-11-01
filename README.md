@@ -48,3 +48,9 @@
 - きかく・せいさく：K.nom
 - おんがく：Zippy
 - こうかおん：効果音ラボ
+
+## Canva用の1ファイル版
+
+`python3 tools/build_single.py <Zen Maru Gothic の ttf があるフォルダ>` で `dist/kimochi_canva.html` を作ります。
+画像・音・フォントをぜんぶ1つのHTMLに入れます（音は作り直さず元のまま。フォントは使う字だけ）。辞書や画面を直したら、もう一度動かして作り直してください。
+フォントは Google Fonts の Zen Maru Gothic（Medium・Bold・Black）を使います。
