@@ -2,6 +2,9 @@
 (() => {
   'use strict';
 
+  // ---------- 画像・音の場所（1ファイル版では、埋めこんだデータを使う） ----------
+  const A = p => (window.KIMOCHI_ASSETS && window.KIMOCHI_ASSETS[p]) || p;
+
   // ---------- データ ----------
   const WORDS = window.KIMOCHI_WORDS || [];
   const WM = {};
@@ -31,10 +34,10 @@
     shinpai: 'びくびく・ひやひや', kinchou: 'そわそわ・がちがち', hazukashii: 'もじもじ'
   };
   const DOKI = [
-    { id: 'shinpai', label: 'しんぱい', sub: 'どうしよう…', img: 'img/chara/stand_dokidoki.webp' },
-    { id: 'kinchou', label: 'きんちょう', sub: '体がかたくなる', img: 'img/chara/sit_dokidoki.webp' },
-    { id: 'hazukashii', label: 'はずかしい', sub: '顔があつくなる', img: 'img/words/dokidoki-13.webp' },
-    { id: 'all', label: 'ぜんぶ', sub: 'こいのドキドキも', img: 'img/chara/sit_koi.webp' }
+    { id: 'shinpai', label: 'しんぱい', sub: 'どうしよう…', img: A('img/chara/stand_dokidoki.webp') },
+    { id: 'kinchou', label: 'きんちょう', sub: '体がかたくなる', img: A('img/chara/sit_dokidoki.webp') },
+    { id: 'hazukashii', label: 'はずかしい', sub: '顔があつくなる', img: A('img/words/dokidoki-13.webp') },
+    { id: 'all', label: 'ぜんぶ', sub: 'こいのドキドキも', img: A('img/chara/sit_koi.webp') }
   ];
   const DM = {}; DOKI.forEach(d => { DM[d.id] = d; });
   const SCENES = [['undokai', '運動会'], ['ensoku', '遠足・修学旅行'], ['happyokai', '発表会・音楽会'], ['test', 'テスト'], ['naraigoto', '習いごと・試合'], ['tanjoubi', '誕生日・プレゼント'], ['kenka', '友だちとけんか'], ['nakanaori', 'なかなおり'], ['shikarareta', 'しかられた'], ['pet', 'ペット・生きもの'], ['hajimete', 'はじめての体験'], ['owakare', 'おわかれ']];
@@ -68,7 +71,7 @@
   function se(name) {
     if (!settings.sound || !name) return;
     try {
-      const base = seCache[name] || (seCache[name] = new Audio(`audio/${SE_FILE[name]}.mp3`));
+      const base = seCache[name] || (seCache[name] = new Audio(A(`audio/${SE_FILE[name]}.mp3`)));
       const a = base.cloneNode();
       a.volume = name === 'cursor' ? 0.45 : 0.7;
       a.play().catch(() => {});
@@ -77,7 +80,7 @@
   function startBgm() {
     if (!settings.sound) return;
     try {
-      if (!bgm) { bgm = new Audio('audio/bgm_connect.mp3'); bgm.loop = true; bgm.volume = 0.32; }
+      if (!bgm) { bgm = new Audio(A('audio/bgm_connect.mp3')); bgm.loop = true; bgm.volume = 0.32; }
       if (bgm.paused) bgm.play().catch(() => {});
     } catch (e) { /* 音が出せなくても動く */ }
   }
@@ -103,8 +106,8 @@
   const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const bar = (h, o) => `hsl(${h + (o || 0)} 78% 56%)`;
   const yomi = (a, b) => a.reading.localeCompare(b.reading, 'ja');
-  const faceOf = f => `img/chara/face_${f}.webp`;
-  const imgOf = w => w.img ? `img/words/${w.id}.webp` : (w.tags.includes('koi') ? 'img/chara/sit_koi.webp' : `img/chara/sit_${w.feeling}.webp`);
+  const faceOf = f => A(`img/chara/face_${f}.webp`);
+  const imgOf = w => A(w.img ? `img/words/${w.id}.webp` : (w.tags.includes('koi') ? 'img/chara/sit_koi.webp' : `img/chara/sit_${w.feeling}.webp`));
   const nfs = s => s.length <= 5 ? 30 : s.length <= 8 ? 24 : s.length <= 10 ? 20 : 17;
   const cfs = s => s.length <= 6 ? 96 : s.length <= 9 ? 64 : s.length <= 13 ? 44 : 38;
   const stars = n => '★'.repeat(n) + '☆'.repeat(3 - n);
@@ -207,7 +210,7 @@
   // ---------- 画面：タイトル ----------
   function titleHtml() {
     const chars = 'きもちをあらわすことばじてん'.split('').map((c, i) => `<span class="ch" aria-hidden="true" style="animation-delay:${(0.1 + i * 0.05).toFixed(2)}s, ${(-i * 0.35).toFixed(2)}s">${c}</span>`).join('');
-    const lineup = FEEL.map((f, i) => `<img src="img/chara/stand_${f.id}.webp" alt="" style="animation-delay:${(-i * 0.45).toFixed(2)}s">`).join('');
+    const lineup = FEEL.map((f, i) => `<img src="${A(`img/chara/stand_${f.id}.webp`)}" alt="" style="animation-delay:${(-i * 0.45).toFixed(2)}s">`).join('');
     return `<div class="title">
       <h1 aria-label="きもちをあらわすことばじてん">${chars}</h1>
       <div style="display:flex;gap:28px">
@@ -241,9 +244,9 @@
     let h = header() + navHtml(steps, total, !!s.id) + heartBtn();
     if (!s.f) {
       h += '<div class="main">' + askHtml('どんな きもち？', 'いちばん近い きもちを えらぼう') + '<div class="grid4">';
-      h += FEEL.map((x, i) => `<button class="fc" data-feel="${x.id}" style="animation-delay:${(i * 0.05).toFixed(2)}s;--bar:${bar(x.h)}"><span class="cbar" aria-hidden="true"></span><img class="fimg" src="img/chara/stand_${x.id}.webp" alt=""><span class="flbl">${x.label}</span><span class="fsub">${x.sub || ''}</span></button>`).join('');
+      h += FEEL.map((x, i) => `<button class="fc" data-feel="${x.id}" style="animation-delay:${(i * 0.05).toFixed(2)}s;--bar:${bar(x.h)}"><span class="cbar" aria-hidden="true"></span><img class="fimg" src="${A(`img/chara/stand_${x.id}.webp`)}" alt=""><span class="flbl">${x.label}</span><span class="fsub">${x.sub || ''}</span></button>`).join('');
       h += '</div></div>';
-      h += '<div class="mini" aria-hidden="true">' + FEEL.map((x, i) => `<img data-mini="${x.id}" src="img/chara/stand_${x.id}.webp" alt="" style="animation-delay:${(-i * 0.45).toFixed(2)}s">`).join('') + '</div>';
+      h += '<div class="mini" aria-hidden="true">' + FEEL.map((x, i) => `<img data-mini="${x.id}" src="${A(`img/chara/stand_${x.id}.webp`)}" alt="" style="animation-delay:${(-i * 0.45).toFixed(2)}s">`).join('') + '</div>';
       return h;
     }
     if (s.f === 'dokidoki' && !s.t) {
@@ -376,7 +379,7 @@
     if (quiz.done) {
       const tier = MSG[quiz.n === 10 ? 10 : 5].find(t => quiz.score >= t[0] && quiz.score <= t[1]) || MSG[5][0];
       if (!quiz.msg) quiz.msg = tier[3][Math.floor(Math.random() * tier[3].length)];
-      return h + `<div class="result"><img src="img/chara/stand_${tier[2]}.webp" alt=""><div class="score">${quiz.n}もん中 ${quiz.score}もん 正解！</div><div class="msg">${esc(quiz.msg)}</div>
+      return h + `<div class="result"><img src="${A(`img/chara/stand_${tier[2]}.webp`)}" alt=""><div class="score">${quiz.n}もん中 ${quiz.score}もん 正解！</div><div class="msg">${esc(quiz.msg)}</div>
         <div class="rbtns"><button class="sb" data-quizn="${quiz.n}">もう一回</button><button class="sb" data-act="title">タイトルへ</button></div></div>`;
     }
     const q = quiz.qs[quiz.i], e = q.e;

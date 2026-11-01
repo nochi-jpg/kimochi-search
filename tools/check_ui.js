@@ -62,7 +62,7 @@ const CHECK = () => {
   const report = [];
   for (const vp of [{ width: 1366, height: 768 }, { width: 1280, height: 720 }]) {
     const page = await browser.newPage({ viewport: vp });
-    await page.goto('http://localhost:8765/index.html');
+    await page.goto(process.env.APP_URL || 'http://localhost:8765/index.html');
     await page.waitForTimeout(800);
     let n = 0;
     const snap = async (label) => {
